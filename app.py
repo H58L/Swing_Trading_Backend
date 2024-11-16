@@ -33,6 +33,49 @@ def get_stock_data():
     except Exception as e:
         print(f"Error occurred: {e}")
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/api/support', methods=['GET'])
+def calculate_support_resistance():
+    # Get the ticker from the query parameters
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "Ticker parameter is required"}), 400
+
+    # Fetch historical data
+    try:
+        stock_data = yf.download(ticker, period='1mo', interval='1d')
+        
+        # Drop any rows with missing data
+        stock_data = stock_data.dropna()
+
+        # Ensure data is available
+        if stock_data.empty:
+            return jsonify({"error": "No data available for the specified period"}), 404
+
+        # Get the latest day's high, low, and close prices
+        high = float(stock_data['High'].iloc[-1])
+        low = float(stock_data['Low'].iloc[-1])
+        close = float(stock_data['Close'].iloc[-1])
+
+        # Calculate pivot point
+        pivot_point = (high + low + close) / 3
+
+        # Calculate support and resistance levels
+        range_ = high - low
+        resistances = [pivot_point + i * range_ for i in range(1, 6)]
+        supports = [pivot_point - i * range_ for i in range(1, 6)]
+
+        # Prepare the response
+        response = {
+            "ticker": ticker,
+            "pivot_point": round(pivot_point, 2),
+            "resistances": [round(r, 2) for r in resistances],
+            "supports": [round(s, 2) for s in supports]
+        }
+        return jsonify(response)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':
