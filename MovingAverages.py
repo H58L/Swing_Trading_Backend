@@ -8,10 +8,15 @@ def calculate_MA2050100(data):
     result = data[['Date', 'Close', 'MA20', 'MA50', 'MA100']].dropna().reset_index()
     return result
 
+# def calculate_MA20(data):
+#      data['MA20'] = data['Close'].rolling(window=20).mean()
+#      result = data[['Date','Close', 'MA20']].dropna().reset_index()
+#      return result
+
 def calculate_MA20(data):
-     data['MA20'] = data['Close'].rolling(window=20).mean()
-     result = data[['Date','Close', 'MA20']].dropna().reset_index()
-     return result
+    data['MA20'] = data['Close'].rolling(window=20).mean()
+    result = data[['Date', 'Close', 'MA20']].dropna()
+    return result
 
 def calculate_MA50(data):
      data['MA50'] = data['Close'].rolling(window=50).mean()
@@ -31,10 +36,15 @@ def calculate_EMA2050100(data):
      result = data[['Date', 'Close', 'EMA20', 'EMA50', 'EMA100']].dropna().reset_index()
      return result
 
+# def calculate_EMA20(data):
+#     data['EMA20'] = data['Close'].ewm(span=20, adjust=False).mean()
+#     result = data[['Date','Close', 'EMA20']].dropna().reset_index(drop=True)
+    
+#     return result
+
 def calculate_EMA20(data):
     data['EMA20'] = data['Close'].ewm(span=20, adjust=False).mean()
-    result = data[['Date','Close', 'EMA20']].dropna().reset_index(drop=True)
-    
+    result = data[['Date', 'Close', 'EMA20']].dropna()
     return result
 
 def calculate_EMA50(data):
@@ -63,23 +73,30 @@ def calculate_ema(data, window):
     """
     return data.ewm(span=window, adjust=False).mean()
 
+# def calculate_MACD(data):
+#     # Ensure Date is in datetime format
+#     data['Date'] = pd.to_datetime(data['Date'])
+
+#     # Calculate MACD components
+#     ema_12 = calculate_ema(data['Close'], 12)
+#     ema_26 = calculate_ema(data['Close'], 26)
+#     macd = ema_12 - ema_26
+#     signal_line = macd.ewm(span=9, adjust=False).mean()
+
+#     # Add MACD and Signal Line to the DataFrame
+#     data['MACD'] = macd
+#     data['Signal_line'] = signal_line
+
+#     # Only return Date, Close, MACD, and Signal_line after calculation
+#     result = data[['Date', 'Close', 'MACD', 'Signal_line']].dropna().reset_index(drop=True)
+#     return result
+
 def calculate_MACD(data):
-    # Ensure Date is in datetime format
-    data['Date'] = pd.to_datetime(data['Date'])
-
-    # Calculate MACD components
-    ema_12 = calculate_ema(data['Close'], 12)
-    ema_26 = calculate_ema(data['Close'], 26)
-    macd = ema_12 - ema_26
-    signal_line = macd.ewm(span=9, adjust=False).mean()
-
-    # Add MACD and Signal Line to the DataFrame
-    data['MACD'] = macd
-    data['Signal_line'] = signal_line
-
-    # Only return Date, Close, MACD, and Signal_line after calculation
-    result = data[['Date', 'Close', 'MACD', 'Signal_line']].dropna().reset_index(drop=True)
+    data['EMA12'] = data['Close'].ewm(span=12, adjust=False).mean()
+    data['EMA26'] = data['Close'].ewm(span=26, adjust=False).mean()
+    data['MACD'] = data['EMA12'] - data['EMA26']
+    data['Signal Line'] = data['MACD'].ewm(span=9, adjust=False).mean()
+    result = data[['Date', 'Close', 'MACD', 'Signal Line']].dropna()
     return result
-
 
      
