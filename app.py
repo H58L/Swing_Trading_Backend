@@ -4,6 +4,22 @@
 from flask import Flask, jsonify, request
 import yfinance as yf
 from flask_cors import CORS
+import pandas as pd
+
+
+# from charts import create_candlestick_chart
+# from RNN import get_rnn_predictions
+# from LSTM import lstm_forecast
+
+from ElliotWave import calculate_elliott_wave, identify_buy_sell_signals
+from BollingerBands import calculate_BB
+from MovingAverages import (
+    calculate_MA20, calculate_MA50, calculate_MA100, 
+    calculate_EMA20, calculate_EMA100, calculate_EMA50,
+    calculate_MA2050100, calculate_EMA2050100, calculate_MACD
+)
+from AverageTrueRange import calculate_atr
+from FibonacciRetracement import calculate_fibonacci_retracement
 
 app = Flask(__name__)
 CORS(app)
@@ -76,6 +92,97 @@ def calculate_support_resistance():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/indicators', methods=['GET'])
+def moving_averages():
+    ticker = request.args.get('ticker', 'AAPL')  # Default to 'AAPL' if no ticker is provided
+    indicator = request.args.get('indicator', 'MA20')  # Default to 'MA20' if no indicator is provided
+
+    try:
+        # Download 6 months of data
+        data = yf.download(ticker, period="6mo")
+        data.reset_index(inplace=True)
+        
+        # SIMPLE moving average
+        if indicator == 'MA':
+            result = calculate_MA2050100(data)
+        elif indicator == 'MA20':
+            result = calculate_MA20(data)
+        elif indicator == 'MA50':
+            result = calculate_MA50(data)
+        elif indicator == 'MA100':
+            result = calculate_MA100(data)
+
+        # EXPOENETIAL MOVING AVERAGES
+        elif indicator == 'EMA':
+            result = calculate_EMA2050100(data)
+        elif indicator == 'EMA20':
+            result = calculate_EMA20(data)
+        elif indicator == 'EMA50':
+            result = calculate_EMA50(data)
+        elif indicator == 'EMA100':
+            result = calculate_EMA100(data)  
+
+        elif indicator == 'BB20': # Bollinger Bands for 20 days
+            result = calculate_BB(data)
+
+        # MACD
+        elif indicator == 'MACD':
+            result = calculate_MACD(data)
+
+        #Average True Range
+        elif indicator == 'ATR':
+            result = calculate_atr(data,14)
+
+        #Fibonacci Retracement
+        elif indicator == 'FR':
+            stock_data = pd.DataFrame(data)
+            result = calculate_fibonacci_retracement(stock_data)
+            return jsonify(result)
+        
+        elif indicator == 'EW00':
+                    # Perform Elliott Wave analysis
+            peaks, troughs, prices, dates = calculate_elliott_wave(data)
+            buy_signals, sell_signals = identify_buy_sell_signals(peaks, troughs, prices, dates)
+            
+            # Debugging print statements
+            print("Peaks:", peaks)
+            print("Troughs:", troughs)
+            print("Prices:", prices)
+            print("Dates:", dates)
+
+            # Create a DataFrame with Close Prices, Peaks, and Troughs
+            df = pd.DataFrame({'Date': dates, 'Close': prices})
+            df['Date'] = pd.to_datetime(df['Date'], errors='coerce')  # Ensure dates are in datetime format
+            df['Date'] = df['Date'].dt.strftime("%Y-%m-%d")  # Format as string
+            
+            # df['Peak'] = pd.Series(prices[peaks], index=peaks)
+            # df['Trough'] = pd.Series(prices[troughs], index=troughs)
+
+            # Reset index for JSON serialization
+            df.reset_index(drop=True, inplace=True)
+
+            # Include buy/sell signals in the result
+            result = {
+                "data": df.to_dict(orient='records'),
+                #.dropna(subset=["Peak", "Trough"], how="all")
+                # .dropna(subset=["Peak", "Trough"], how="all").to_dict(orient='records'),
+                "buy_signals": [{"date": date, "price": price} for date, price in buy_signals],
+                "sell_signals": [{"date": date, "price": price} for date, price in sell_signals]
+            }
+
+            return jsonify(result)            
+
+        else:
+            return jsonify({"error": f"Indicator '{indicator}' is not supported."}), 400
+
+        # Convert Date to string for JSON response
+        result['Date'] = result['Date'].astype(str)
+        return jsonify(result.to_dict(orient='records'))
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 
 
 if __name__ == '__main__':
