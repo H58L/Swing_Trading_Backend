@@ -26,23 +26,34 @@ def find_peaks(data, distance):
 
 #     return peaks, troughs, prices, dates
 
+# def calculate_elliott_wave(data):
+#     # Ensure the data has a 'Close' column and drop any NaN values
+#     prices = data['Close'].dropna().values
+#     dates = data['Date']  # Using the 'Date' column after reset_index
+
+#     # Find peaks (local maxima)
+#     peaks = find_peaks(prices, 5)  # Custom find_peaks returns only peaks
+
+#     # Find troughs (local minima by inverting the data)
+#     troughs = find_peaks(-prices, 5)  # No unpacking, just use the returned value
+
+#     return peaks, troughs, prices, dates
+
 def calculate_elliott_wave(data):
-    # Ensure the data has a 'Close' column and drop any NaN values
-    prices = data['Close'].dropna().values
-    dates = data['Date']  # Using the 'Date' column after reset_index
-
-    # Find peaks (local maxima)
-    peaks = find_peaks(prices, 5)  # Custom find_peaks returns only peaks
-
-    # Find troughs (local minima by inverting the data)
-    troughs = find_peaks(-prices, 5)  # No unpacking, just use the returned value
-
+    prices = data['Close'].values
+    dates = data['Date']
+    peaks = find_peaks(prices, 5)
+    troughs = find_peaks(-prices, 5)
     return peaks, troughs, prices, dates
 
 
-def identify_buy_sell_signals(peaks, troughs, prices, dates):
-    # Convert dates to string format for JSON serialization
-    buy_signals = [(dates[trough].strftime("%Y-%m-%d"), prices[trough]) for trough in troughs]
-    sell_signals = [(dates[peak].strftime("%Y-%m-%d"), prices[peak]) for peak in peaks]
-    return buy_signals, sell_signals
+# def identify_buy_sell_signals(peaks, troughs, prices, dates):
+#     # Convert dates to string format for JSON serialization
+#     buy_signals = [(dates[trough].strftime("%Y-%m-%d"), prices[trough]) for trough in troughs]
+#     sell_signals = [(dates[peak].strftime("%Y-%m-%d"), prices[peak]) for peak in peaks]
+#     return buy_signals, sell_signals
 
+def identify_buy_sell_signals(peaks, troughs, prices, dates):
+    buy_signals = [(dates[i], prices[i]) for i in troughs]
+    sell_signals = [(dates[i], prices[i]) for i in peaks]
+    return buy_signals, sell_signals
